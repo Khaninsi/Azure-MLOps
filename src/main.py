@@ -1,10 +1,9 @@
 import pandas as pd
 import numpy as np
 import warnings
-from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.preprocessing import FunctionTransformer, StandardScaler, OneHotEncoder
 from sklearn.model_selection import train_test_split
 from sklearn import metrics
-from sklearn import tree
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 
@@ -57,10 +56,6 @@ def main():
     # Copying original dataframe
     df_bank_ready = df_bank.copy()
     
-    ### Data manupulation
-    # Clean belance < 0 to be 0
-    df_bank.loc[df_bank['balance']<0, 'balance'] = 0
-    
     # Select Features
     feature = df_bank.drop('deposit', axis=1)
 
@@ -77,15 +72,25 @@ def main():
     numeric_columns = ['age', 'balance', 'day', 'campaign', 'pdays', 'previous']
     categorical_columns = ['job', 'marital', 'education', 'default', 'housing', 'loan', 'contact', 'month', 'poutcome']
 
+    # define a function that cleans the balance column
+    def clean_balance(x):
+        return np.maximum(x, 0)
+
+    # define a custom transformer that applies the clean_balance function to the balance column
+    clean_balance_transformer = FunctionTransformer(clean_balance)
+
     scaler = StandardScaler()
     one_hot_encoder = OneHotEncoder()
 
+    # Embeded both transformation into ColumnTransformer so that it could automatically transform data when 
+    # having new data
     preprocessor = ColumnTransformer(transformers=[
+        ('clean_balance', clean_balance_transformer, ['balance']),
         ('num', scaler, numeric_columns),
         ('cat', one_hot_encoder, categorical_columns)
     ])
 
-    # We fit preprocessor with X_train to prevent overfitting 
+    # We fit preprocessor with X_train instead of the whole dataset to prevent data leakage
     preprocessor.fit(X_train)
     
     X_train_preprocessed = preprocessor.transform(X_train)
