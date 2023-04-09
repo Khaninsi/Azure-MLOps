@@ -2,3 +2,7 @@ numpy==1.23.5
 scikit-learn==1.2.1
 scipy==1.9.3
 pandas==1.5.2
+jupyter-client==7.4.9
+ipython-genutils
+ipykernel==5.5.5
+papermill==2.4.0
