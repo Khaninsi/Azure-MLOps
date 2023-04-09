@@ -1,0 +1,33 @@
+trigger:
+- main
+
+pool:
+  vmImage: ubuntu-latest
+
+steps:
+- task: UsePythonVersion@0
+  inputs:
+    versionSpec: '3.8'
+- script: pip install -r requirement/requirements.txt
+  displayName: 'pip install notebook reqs'
+- task: Bash@3
+  inputs:
+    filePath: 'setup/sdk_setup.sh'
+  displayName: 'set up sdk'
+
+- task: Bash@3
+  inputs:
+    filePath: 'setup/cli_setup.sh'
+  displayName: 'set up CLI'
+
+- task: AzureCLI@2
+  inputs:
+    azureSubscription: 'machine-learning-connection'
+    scriptType: 'bash'
+    scriptLocation: 'inlineScript'
+    inlineScript: |
+           sed -i -e "s/<SUBSCRIPTION_ID>/$(SUBSCRIPTION_ID)/g" Tutorial-MLOps.ipynb
+           sed -i -e "s/<RESOURCE_GROUP>/$(RESOURCE_GROUP)/g" Tutorial-MLOps.ipynb
+           sed -i -e "s/<AML_WORKSPACE_NAME>/$(AZUREML_WORKSPACE_NAME)/g" Tutorial-MLOps.ipynb
+           sed -i -e "s/DefaultAzureCredential/AzureCliCredential/g" Tutorial-MLOps.ipynb
+           papermill -k python Tutorial-MLOps.ipynb Tutorial-MLOps.output.ipynb
